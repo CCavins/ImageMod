@@ -219,8 +219,8 @@
           </div>
         </div>
         <div class="viewer-controls" style="margin-top:20px; display:flex; gap:10px;">
-          <button id="approveBtn" onclick="approve()">✅ Approve</button>
           <button id="denyBtn" onclick="deny()">❌ Deny</button>
+          <button id="approveBtn" onclick="approve()">✅ Approve</button>
           <button onclick="backToModeration()">⬅️ Back</button>
         </div>
       </div>
@@ -330,8 +330,8 @@ function createImageCard(img, type) {
       animateDeny(div, img.filename);
     };
 
-    buttonContainer.appendChild(approveBtn);
     buttonContainer.appendChild(denyBtn);
+    buttonContainer.appendChild(approveBtn);
     div.appendChild(buttonContainer);
 
     div.onclick = () => handleImageClick(img.id, type);
