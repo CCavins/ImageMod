@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Moderation Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: #fff;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 250px;
+      background: #222;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sidebar button {
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 12px;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: background 0.3s;
+      text-align: left;
+    }
+    .sidebar button.active {
+      background: #FFFC00;
+      color: #111;
+      font-weight: bold;
+    }
+    .sidebar button:hover {
+      background: #444;
+    }
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    .header {
+      background: #222;
+      padding: 10px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+    }
+    .counter {
+      text-align: center;
+      padding: 10px;
+      background: #1c1c1c;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .section-title {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      justify-content: flex-start;
+      gap: 20px;
+      padding: 20px;
+      background: #121212;
+    }
+    .image-card {
+      width: 200px;
+      border: 2px solid #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background: #333;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s, opacity 0.4s, box-shadow 0.3s;
+      opacity: 0;
+      animation: fadeIn 0.5s forwards;
+    }
+
+    .image-card img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    .image-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px #FFFC00;
+    }
+    .image-approved {
+      box-shadow: 0 0 10px green !important;
+    }
+    .image-denied {
+      box-shadow: 0 0 10px red !important;
+    }
+    .thumbnail-buttons {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 5px;
+      z-index: 2;
+    }
+    .thumbnail-buttons button {
+      background: rgba(0,0,0,0.7);
+      border: none;
+      color: #fff;
+      padding: 5px 8px;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 4px;
+      transition: background 0.3s;
+    }
+    .thumbnail-buttons button:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    .viewer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 100;
+      background: rgba(0,0,0,0.9);
+      padding: 20px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .viewer-image-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-height: 70vh;
+      overflow: hidden;
+    }
+    .viewer img {
+      max-width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+      opacity: 0;
+      transition: transform 0.4s ease, opacity 0.4s ease;
+      display: block;
+      transform: translateX(0);
+    }
+    #loadingSpinner {
+      display: flex;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 10;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+    #loadingSpinner.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideOutLeft {
+      to { transform: translateX(-150%); opacity: 0; }
+    }
+    @keyframes slideOutRight {
+      to { transform: translateX(150%); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div style="display: flex; width: 100%;">
+    <div class="sidebar">
+      <button id="moderateBtn" onclick="showModeration()">📋 Moderate Queue</button>
+      <button id="approvedBtn" onclick="showApproved()">✅ Approved</button>
+      <button id="deniedBtn" onclick="showDenied()">❌ Denied</button>
+    </div>
+    <div class="main-content">
+      <div class="header">
+        <button id="refreshBtn" onclick="refreshImages()">Refresh</button>
+      </div>
+      <div class="counter" id="counter">0 images left to review</div>
+      <div id="sectionTitle" class="section-title"></div>
+
+      <div class="content" id="moderationGrid"></div>
+      <div class="content" id="approvedGrid" style="display:none"></div>
+      <div class="content" id="deniedGrid" style="display:none"></div>
+
+      <div class="viewer" id="viewer">
+        <div class="viewer-image-container">
+          <img id="viewerImg" src="">
+          <div id="loadingSpinner">
+            <div style="border: 8px solid #f3f3f3; border-top: 8px solid #FFFC00; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite;"></div>
+          </div>
+        </div>
+        <div class="viewer-controls" style="margin-top:20px; display:flex; gap:10px;">
+          <button id="approveBtn" onclick="approve()">✅ Approve</button>
+          <button id="denyBtn" onclick="deny()">❌ Deny</button>
+          <button onclick="backToModeration()">⬅️ Back</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const SERVER_URL = 'http://localhost:3000';
+let pendingImages = [];
+let approvedImages = [];
+let deniedImages = [];
+let currentImage = null;
+let currentView = 'moderation';
+let viewerLoaded = false;
+function refreshImages() {
+  Promise.all([
+    fetch(`${SERVER_URL}/api/list-new-images`).then(res => res.json()),
+    fetch(`${SERVER_URL}/api/list-approved-images`).then(res => res.json()),
+    fetch(`${SERVER_URL}/api/list-denied-images`).then(res => res.json())
+  ]).then(([pending, approved, denied]) => {
+    pendingImages = pending.map(f => ({ id: f, filename: f }));
+    approvedImages = approved.map(f => ({ id: f, filename: f }));
+    deniedImages = denied.map(f => ({ id: f, filename: f }));
+    renderGrids();
+  });
+
+  fetch(`${SERVER_URL}/api/count-new-images`)
+    .then(res => res.json())
+    .then(count => {
+      document.getElementById('refreshBtn').innerText = `Refresh (${count} New Images)`;
+    });
+}
+
+function renderGrids() {
+  document.getElementById('moderationGrid').innerHTML = '';
+  document.getElementById('approvedGrid').innerHTML = '';
+  document.getElementById('deniedGrid').innerHTML = '';
+
+  pendingImages.forEach(img => {
+    const div = createImageCard(img, 'new');
+    document.getElementById('moderationGrid').appendChild(div);
+  });
+
+  approvedImages.forEach(img => {
+    const div = createImageCard(img, 'approved');
+    document.getElementById('approvedGrid').appendChild(div);
+  });
+
+  deniedImages.forEach(img => {
+    const div = createImageCard(img, 'denied');
+    document.getElementById('deniedGrid').appendChild(div);
+  });
+
+  updateCounter();
+}
+
+function createImageCard(img, type) {
+  const div = document.createElement('div');
+  div.className = 'image-card';
+
+  const thumb = document.createElement('img');
+  thumb.src = `${SERVER_URL}/images/${type}/${encodeURIComponent(img.filename)}`;
+  div.appendChild(thumb);
+
+  if (type === 'new') {
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'thumbnail-buttons';
+
+    const approveBtn = document.createElement('button');
+    approveBtn.innerText = '✅';
+    approveBtn.onclick = (e) => {
+      e.stopPropagation();
+      animateApprove(div, img.filename);
+    };
+
+    const denyBtn = document.createElement('button');
+    denyBtn.innerText = '❌';
+    denyBtn.onclick = (e) => {
+      e.stopPropagation();
+      animateDeny(div, img.filename);
+    };
+
+    buttonContainer.appendChild(approveBtn);
+    buttonContainer.appendChild(denyBtn);
+    div.appendChild(buttonContainer);
+
+    div.onclick = () => handleImageClick(img.id, type);
+  } else {
+    div.onclick = () => {
+      if (confirm('Move this image back to moderation?')) {
+        moveFileBack(img.filename, type);
+      }
+    };
+    if (type === 'approved') div.classList.add('image-approved');
+    if (type === 'denied') div.classList.add('image-denied');
+  }
+
+  return div;
+}
+function animateApprove(div, filename) {
+  div.style.animation = 'slideOutRight 0.5s forwards';
+  setTimeout(() => {
+    moveFile(filename, 'approved');
+    div.remove();
+  }, 400);
+}
+
+function animateDeny(div, filename) {
+  div.style.animation = 'slideOutLeft 0.5s forwards';
+  setTimeout(() => {
+    moveFile(filename, 'denied');
+    div.remove();
+  }, 400);
+}
+
+function moveFile(filename, status) {
+  fetch(`${SERVER_URL}/api/move-image`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename, status })
+  }).then(() => {
+    pendingImages = pendingImages.filter(img => img.filename !== filename);
+    if (pendingImages.length > 0) {
+      currentImage = pendingImages[0];
+      loadImageInViewer(currentImage);
+    } else {
+      document.getElementById('viewer').style.display = 'none';
+      showModeration();
+    }
+    refreshImages();
+  });
+}
+
+function moveFileBack(filename, fromStatus) {
+  fetch(`${SERVER_URL}/api/move-back-to-new`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename, fromStatus })
+  }).then((res) => {
+    if (!res.ok) {
+      console.error('Move-back failed:', res.status);
+    } else {
+      console.log(`Moved ${filename} back to New`);
+      refreshImages();
+    }
+  }).catch(err => console.error('Error moving back:', err));
+}
+
+function handleImageClick(id, type) {
+  if (type === 'new') {
+    currentImage = pendingImages.find(img => img.id === id);
+  } else if (type === 'approved') {
+    currentImage = approvedImages.find(img => img.id === id);
+  } else if (type === 'denied') {
+    currentImage = deniedImages.find(img => img.id === id);
+  }
+  if (!currentImage) return;
+
+  document.getElementById('moderationGrid').style.display = 'none';
+  document.getElementById('approvedGrid').style.display = 'none';
+  document.getElementById('deniedGrid').style.display = 'none';
+
+  loadImageInViewer(currentImage);
+  document.getElementById('viewer').style.display = 'flex';
+}
+
+function loadImageInViewer(imageObj) {
+  const imgEl = document.getElementById('viewerImg');
+  const spinner = document.getElementById('loadingSpinner');
+  viewerLoaded = false;
+
+  imgEl.style.opacity = '0';
+  imgEl.style.transform = 'translateX(0)';
+  spinner.classList.add('active');
+  document.getElementById('approveBtn').disabled = true;
+  document.getElementById('denyBtn').disabled = true;
+
+  imgEl.onload = () => {
+    spinner.classList.remove('active');
+    imgEl.style.opacity = '1';
+    viewerLoaded = true;
+    document.getElementById('approveBtn').disabled = false;
+    document.getElementById('denyBtn').disabled = false;
+  };
+
+  imgEl.src = `${SERVER_URL}/images/new/${encodeURIComponent(imageObj.filename)}`;
+}
+
+function approve() {
+  if (!currentImage || !viewerLoaded) return;
+  animateViewerOut('approved');
+}
+
+function deny() {
+  if (!currentImage || !viewerLoaded) return;
+  animateViewerOut('denied');
+}
+
+function animateViewerOut(status) {
+  const imgEl = document.getElementById('viewerImg');
+  imgEl.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
+  imgEl.style.transform = status === 'approved' ? 'translateX(100%)' : 'translateX(-100%)';
+  imgEl.style.opacity = '0';
+
+  setTimeout(() => {
+    moveFile(currentImage.filename, status);
+  }, 400);
+}
+
+function backToModeration() {
+  document.getElementById('viewer').style.display = 'none';
+  if (currentView === 'moderation') showModeration();
+  else if (currentView === 'approved') showApproved();
+  else showDenied();
+}
+
+function hideViewer() {
+  document.getElementById('viewer').style.display = 'none';
+}
+
+function updateCounter() {
+  document.getElementById('counter').innerText = `${pendingImages.length} images left to review`;
+}
+
+function showModeration() {
+  hideViewer();
+  currentView = 'moderation';
+  document.getElementById('moderationGrid').style.display = 'flex';
+  document.getElementById('approvedGrid').style.display = 'none';
+  document.getElementById('deniedGrid').style.display = 'none';
+}
+
+function showApproved() {
+  hideViewer();
+  currentView = 'approved';
+  document.getElementById('moderationGrid').style.display = 'none';
+  document.getElementById('approvedGrid').style.display = 'flex';
+  document.getElementById('deniedGrid').style.display = 'none';
+}
+
+function showDenied() {
+  hideViewer();
+  currentView = 'denied';
+  document.getElementById('moderationGrid').style.display = 'none';
+  document.getElementById('approvedGrid').style.display = 'none';
+  document.getElementById('deniedGrid').style.display = 'flex';
+}
+
+// 🔄 WebSocket updates
+const ws = new WebSocket('ws://localhost:3000');
+ws.onmessage = (event) => {
+  if (event.data === 'folderChanged') refreshImages();
+};
+
+// ⌨️ Keyboard shortcuts
+document.addEventListener('keydown', (event) => {
+  if (document.getElementById('viewer').style.display === 'flex') {
+    if (event.key === 'ArrowRight' && viewerLoaded) approve();
+    else if (event.key === 'ArrowLeft' && viewerLoaded) deny();
+    else if (event.key === 'Escape') backToModeration();
+  }
+});
+
+// 🚀 Init
+refreshImages();
+</script>
+</body>
+</html>
