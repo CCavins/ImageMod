@@ -199,7 +199,10 @@
     </div>
     <div class="main-content">
       <div class="header">
-        <button id="refreshBtn" onclick="refreshImages()">Refresh</button>
+        <label style="display: flex; align-items: center; gap: 6px; color: #fff;">
+          <input type="checkbox" id="autoAddToggle" onchange="handleAutoToggle()" checked> Auto-add to queue
+        </label>
+        <button id="refreshBtn" onclick="refreshImages(true)">Refresh</button>
       </div>
       <div class="counter" id="counter">0 images left to review</div>
       <div id="sectionTitle" class="section-title"></div>
@@ -223,7 +226,6 @@
       </div>
     </div>
   </div>
-
 <script>
 const SERVER_URL = 'http://localhost:3000';
 let pendingImages = [];
@@ -232,50 +234,78 @@ let deniedImages = [];
 let currentImage = null;
 let currentView = 'moderation';
 let viewerLoaded = false;
-function refreshImages() {
+let autoAdd = truea;
+let unseenImages = [];
+function refreshImages(forceAdd = false) {
   Promise.all([
     fetch(`${SERVER_URL}/api/list-new-images`).then(res => res.json()),
     fetch(`${SERVER_URL}/api/list-approved-images`).then(res => res.json()),
     fetch(`${SERVER_URL}/api/list-denied-images`).then(res => res.json())
-  ]).then(([pending, approved, denied]) => {
-    pendingImages = pending.map(f => ({ id: f, filename: f }));
+  ]).then(([newList, approved, denied]) => {
+    const currentFilenames = new Set(pendingImages.map(img => img.filename));
+    unseenImages = newList.filter(f => !currentFilenames.has(f));
+
+    // ✅ Only add if autoAdd is on or user clicked refresh
+    if ((autoAdd || forceAdd) && unseenImages.length > 0) {
+      unseenImages.forEach(f => pendingImages.push({ id: f, filename: f }));
+      unseenImages = []; // ✅ reset unseen count after pushing
+    }
+
     approvedImages = approved.map(f => ({ id: f, filename: f }));
     deniedImages = denied.map(f => ({ id: f, filename: f }));
-    renderGrids();
-  });
 
-  fetch(`${SERVER_URL}/api/count-new-images`)
-    .then(res => res.json())
-    .then(count => {
-      document.getElementById('refreshBtn').innerText = `Refresh (${count} New Images)`;
-    });
+    renderGrids();
+    updateCounter();
+
+    if (!autoAdd) {
+      document.getElementById('refreshBtn').innerText = `Refresh (${unseenImages.length} New Images)`;
+    }
+  });
+}
+
+function handleAutoToggle() {
+  autoAdd = document.getElementById('autoAddToggle').checked;
+  document.getElementById('refreshBtn').style.display = autoAdd ? 'none' : 'inline-block';
+
+  if (autoAdd) {
+    refreshImages(); // Auto-add any current unseen
+  } else {
+    document.getElementById('refreshBtn').innerText = `Refresh (${unseenImages.length} New Images)`;
+  }
 }
 
 function renderGrids() {
-  document.getElementById('moderationGrid').innerHTML = '';
-  document.getElementById('approvedGrid').innerHTML = '';
-  document.getElementById('deniedGrid').innerHTML = '';
-
-  pendingImages.forEach(img => {
-    const div = createImageCard(img, 'new');
-    document.getElementById('moderationGrid').appendChild(div);
-  });
-
-  approvedImages.forEach(img => {
-    const div = createImageCard(img, 'approved');
-    document.getElementById('approvedGrid').appendChild(div);
-  });
-
-  deniedImages.forEach(img => {
-    const div = createImageCard(img, 'denied');
-    document.getElementById('deniedGrid').appendChild(div);
-  });
-
+  renderGrid('moderationGrid', pendingImages, 'new');
+  renderGrid('approvedGrid', approvedImages, 'approved');
+  renderGrid('deniedGrid', deniedImages, 'denied');
   updateCounter();
+}
+
+function renderGrid(containerId, images, type) {
+  const container = document.getElementById(containerId);
+  const existing = new Set([...container.children].map(child => child.dataset.filename));
+  const nextSet = new Set(images.map(img => img.filename));
+
+  // Remove cards that shouldn't be there
+  [...container.children].forEach(child => {
+    if (!nextSet.has(child.dataset.filename)) {
+      container.removeChild(child);
+    }
+  });
+
+  // Add cards that are new
+  images.forEach(img => {
+    if (!existing.has(img.filename)) {
+      const div = createImageCard(img, type);
+      div.dataset.filename = img.filename; // for tracking
+      container.appendChild(div);
+    }
+  });
 }
 
 function createImageCard(img, type) {
   const div = document.createElement('div');
+  div.dataset.filename = img.filename;
   div.className = 'image-card';
 
   const thumb = document.createElement('img');
