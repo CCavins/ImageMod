@@ -109,6 +109,10 @@ http://localhost:3000/moderation.html
 
 ## 🧠 How It Works
 
+Mode | Behavior
+Auto-Add (Default ON) | New images immediately appear in the moderation queue, no need to click anything.
+Manual Refresh (Auto-Add OFF) | Refresh button appears — manually pull new images into the queue when desired.
+
 | Action | What Happens |
 |--------|--------------|
 | Approve (✅) | Image is moved from New ➔ Approved |
@@ -119,6 +123,7 @@ http://localhost:3000/moderation.html
 
 ✅ Full animation on approve/deny  
 ✅ Smooth keyboard shortcuts (→ Approve, ← Deny, ESC to Exit)
+
 
 ---
 
