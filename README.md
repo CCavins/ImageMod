@@ -109,17 +109,16 @@ http://localhost:3000/moderation.html
 
 ## 🧠 How It Works
 
-Mode | Behavior
-Auto-Add (Default ON) | New images immediately appear in the moderation queue, no need to click anything.
-Manual Refresh (Auto-Add OFF) | Refresh button appears — manually pull new images into the queue when desired.
+| Action/Mode | What Happens |
+|-----------------------------|------------------------------------------------|
+| Auto-Add (Default ON)        | New images automatically appear in the moderation queue — no clicks needed. |
+| Manual Refresh (Auto-Add OFF)| Refresh button appears — manually pull new images into the queue when desired. |
+| Approve (✅)                  | Image is moved from New ➔ Approved folder. |
+| Deny (❌)                     | Image is moved from New ➔ Denied folder. |
+| Click in Approved/Denied     | Option to move the image back into the New moderation queue. |
+| Refresh Button               | Manually rechecks all folders for new images when Auto-Add is OFF. |
+| WebSocket Push Updates       | Instantly detects new files in New Images folder — no browser refresh needed. |
 
-| Action | What Happens |
-|--------|--------------|
-| Approve (✅) | Image is moved from New ➔ Approved |
-| Deny (❌)    | Image is moved from New ➔ Denied |
-| Click in Approved/Denied | Option to move image back to New queue |
-| Refresh button | Rechecks all folders manually |
-| WebSocket push | Auto-refresh on server-side folder changes |
 
 ✅ Full animation on approve/deny  
 ✅ Smooth keyboard shortcuts (→ Approve, ← Deny, ESC to Exit)
