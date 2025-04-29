@@ -234,7 +234,7 @@ let deniedImages = [];
 let currentImage = null;
 let currentView = 'moderation';
 let viewerLoaded = false;
-let autoAdd = truea;
+let autoAdd = true;
 let unseenImages = [];
 function refreshImages(forceAdd = false) {
   Promise.all([
@@ -513,6 +513,7 @@ document.addEventListener('keydown', (event) => {
 
 // 🚀 Init
 refreshImages();
+document.getElementById('refreshBtn').style.display = autoAdd ? 'none' : 'inline-block';
 </script>
 </body>
 </html>
