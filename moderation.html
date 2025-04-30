@@ -236,6 +236,13 @@ let currentView = 'moderation';
 let viewerLoaded = false;
 let autoAdd = true;
 let unseenImages = [];
+fetch(`${SERVER_URL}/api/config`)
+  .then(res => res.json())
+  .then(config => {
+    USE_JSON_MODE = config.useJsonMode;
+    refreshImages(); // wait to load images until we know the mode
+    document.getElementById('refreshBtn').style.display = autoAdd ? 'none' : 'inline-block';
+  });
 function refreshImages(forceAdd = false) {
   Promise.all([
     fetch(`${SERVER_URL}/api/list-new-images`).then(res => res.json()),
@@ -309,7 +316,8 @@ function createImageCard(img, type) {
   div.className = 'image-card';
 
   const thumb = document.createElement('img');
-  thumb.src = `${SERVER_URL}/images/${type}/${encodeURIComponent(img.filename)}`;
+  const folder = USE_JSON_MODE ? 'all' : type;
+  thumb.src = `${SERVER_URL}/images/${folder}/${encodeURIComponent(img.filename)}`;
   div.appendChild(thumb);
 
   if (type === 'new') {
@@ -433,7 +441,9 @@ function loadImageInViewer(imageObj) {
     document.getElementById('denyBtn').disabled = false;
   };
 
-  imgEl.src = `${SERVER_URL}/images/new/${encodeURIComponent(imageObj.filename)}`;
+  const folder = USE_JSON_MODE ? 'all' : 'new';
+  imgEl.src = `${SERVER_URL}/images/${folder}/${encodeURIComponent(imageObj.filename)}`;
+
 }
 
 function approve() {
@@ -512,7 +522,6 @@ document.addEventListener('keydown', (event) => {
 });
 
 // 🚀 Init
-refreshImages();
 document.getElementById('refreshBtn').style.display = autoAdd ? 'none' : 'inline-block';
 </script>
 </body>
