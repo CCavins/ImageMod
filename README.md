@@ -126,6 +126,63 @@ http://localhost:3000/moderation.html
 
 ---
 
+
+
+## 🔄 Moderation Modes: JSON vs Folder-Based
+
+This tool supports **two moderation modes**, configured by a single setting in `server.js`:
+
+```js
+const USE_JSON_MODE = true; // ✅ true = JSON mode, false = folder mode
+```
+
+---
+
+### ✅ JSON Mode (`USE_JSON_MODE = true`)
+
+| Feature | Behavior |
+|--------|----------|
+| Central folder | All images live in `/Images/` |
+| Metadata | Tracked in `image-metadata.json` |
+| Status updates | Approve/Deny only update JSON flags (no file moves) |
+| Auto-conversion | On boot, files from `New Images`, `Approved Images`, and `Denied Images` are moved to `Images/` and tagged accordingly |
+| Auto-sync | New files added to `Images/` on disk are added to JSON; missing files are removed from metadata |
+
+---
+
+### 📁 Folder Mode (`USE_JSON_MODE = false`)
+
+| Feature | Behavior |
+|--------|----------|
+| Image sorting | Files live in separate folders: `New Images/`, `Approved Images/`, `Denied Images/` |
+| No metadata used | `image-metadata.json` is ignored |
+| Status updates | Physically moves files between folders |
+| Auto-conversion | On boot, all images in `/Images/` are moved back to their correct folders based on the JSON flags, then JSON is cleared |
+
+---
+
+### 🔁 Switching Between Modes
+
+To switch modes:
+
+1. Open `server.js`
+2. Find the setting near the top:
+
+```js
+const USE_JSON_MODE = true; // or false
+```
+
+3. Restart the server:
+
+```bash
+node server.js
+```
+
+The server will automatically:
+- Move files appropriately between folders
+- Update or rebuild the metadata file (`image-metadata.json`)
+- Ensure everything is synced with the active mode
+
 ## ⌨️ Keyboard Shortcuts (Viewer)
 
 | Key             | Action             |
