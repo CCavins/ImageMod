@@ -21,7 +21,9 @@ A fast, real-time, folder-based image moderation tool built with pure JavaScript
 ├── README.md
 ├── New Images/         # Incoming unmoderated images
 ├── Approved Images/    # Approved images
-└── Denied Images/      # Denied images
+├── Denied Images/      # Denied images (used in folder mode)
+├── Images/             # ✅ All images live here when using JSON mode
+├── image-metadata.json # ✅ Metadata file for JSON moderation tracking
 ```
 
 ✅ If any of these folders are missing, `server.js` **automatically creates them**.
