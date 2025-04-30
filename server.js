@@ -34,16 +34,27 @@ let imageMetadata = {}; // Loaded if using JSON mode
 
 // === Mode Conversion on Startup ===
 if (USE_JSON_MODE) {
-  // 🡒 Convert from folders into central Images/ + JSON
+  if (fs.existsSync(METADATA_FILE)) {
+    imageMetadata = JSON.parse(fs.readFileSync(METADATA_FILE));
+    console.log(`📄 Loaded existing metadata (${Object.keys(imageMetadata).length} entries)`);
+  }
+
   const mergeIntoImages = (folder, status) => {
     fs.readdirSync(folder).forEach(file => {
       if (!/\.(jpg|jpeg|png|gif)$/i.test(file)) return;
       const src = path.join(folder, file);
       const dest = path.join(ALL_IMAGES_FOLDER, file);
+
       if (!fs.existsSync(dest)) {
         fs.renameSync(src, dest);
+        console.log(`➡️ Moved ${file} to Images/`);
+      }
+
+      if (!imageMetadata[file]) {
         imageMetadata[file] = { status, timestamp: Date.now() };
-        console.log(`➡️ Moved ${file} to Images/ and set status: ${status}`);
+        console.log(`➕ Added ${file} to metadata as '${status}'`);
+      } else {
+        console.log(`⏭️ Skipped tagging ${file}, already marked as '${imageMetadata[file].status}'`);
       }
     });
   };
@@ -52,7 +63,7 @@ if (USE_JSON_MODE) {
   mergeIntoImages(APPROVED_FOLDER, 'approved');
   mergeIntoImages(DENIED_FOLDER, 'denied');
 
-  // ✅ Ensure all existing images in /Images are tracked in metadata
+  // ✅ Final metadata sync before saving
   const allImages = fs.readdirSync(ALL_IMAGES_FOLDER).filter(f => /\.(jpg|jpeg|png|gif)$/i.test(f));
   const trackedSet = new Set(Object.keys(imageMetadata));
   allImages.forEach(file => {
@@ -62,7 +73,6 @@ if (USE_JSON_MODE) {
     }
   });
 
-  // ❌ Remove metadata entries for files that no longer exist
   Object.keys(imageMetadata).forEach(file => {
     if (!fs.existsSync(path.join(ALL_IMAGES_FOLDER, file))) {
       delete imageMetadata[file];
@@ -72,8 +82,9 @@ if (USE_JSON_MODE) {
 
   saveMetadata();
   console.log(`📦 Finished converting to JSON mode.`);
+}
 
-} else {
+  else {
   // 🡒 Convert JSON data back into folders
   if (fs.existsSync(METADATA_FILE)) {
     imageMetadata = JSON.parse(fs.readFileSync(METADATA_FILE));
