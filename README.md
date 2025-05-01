@@ -239,16 +239,6 @@ http://192.168.1.105:3000/moderation.html
 
 ---
 
-## 📈 Recommended Improvements (Optional)
-
-- Add login authentication for moderator access
-- Save a database log of all actions (e.g., approved/denied/moved)
-- Add mobile optimizations for easier moderation on phones
-- Deploy the Node.js server to a cloud service (Render, AWS EC2, DigitalOcean)
-- Implement multi-user roles (reviewer, admin)
-
----
-
 ## 🔥 Quick Command Cheat Sheet
 
 ```bash
